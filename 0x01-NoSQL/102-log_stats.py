@@ -43,4 +43,3 @@ if __name__ == "__main__":
         ip = top_ip.get("ip")
         count = top_ip.get("count")
         print(f'\t{ip}: {count}')
-

@@ -1,7 +1,7 @@
-#!/usr/bin/python3
-""" 
+#!/usr/bin/env python3
+"""
 this module contains a Python function
-that lists all documents in a collection 
+that lists all documents in a collection
 """
 
 
