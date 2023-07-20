@@ -1,58 +1,55 @@
 #!/usr/bin/env python3
-""" 
-This module contains a function that uses the requests module
-to obtain the HTML content of a particular URL and returns it.
-It also contains a wrraper function that  tracks how many times
-a particular URL was accessed in the key "count:{url}" and cache
-the result with an expiration time of 10 seconds.
+"""Module for implementing an expiring web cache and tracker
 """
-import redis
 import requests
-from typing import Callable
+import time
 from functools import wraps
 
+CACHE_EXPIRATION_TIME = 10  # seconds
+CACHE = {}
 
-redis_client = redis.Redis()
 
-
-def cache_result(fn: Callable) -> Callable:
-    """
-    decorator function to cache url
+def cache(fn):
+    """_summary_
 
     Args:
-        fn (callable): decorated function
+        fn (function): _description_
 
-    Return:
-        wrapper function
+    Returns:
+        _type_: _description_
     """
     @wraps(fn)
-    def wrapper(*args, **kwargs):
-        """ wrapper function """
+    def wrapped(*args, **kwargs):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         url = args[0]
-        count_key = "count:{}".format(url)
-        result_key = "result:{}".format(url)
-
-        if redis_client.exists(result_key):
-            redis_client.incr(count_key)
-            return redis_client.get(result_key).decode("utf-8")
-
-        result = fn(*args, **kwargs)
-        redis_client.set(count_key, 0)
-        redis_client.setex(result_key, 10, result)
-        return result
-    return wrapper
+        if url in CACHE and CACHE[url]["timestamp"] + CACHE_EXPIRATION_TIME > \
+                time.time():
+            CACHE[url]["count"] += 1
+            return CACHE[url]["content"]
+        else:
+            content = fn(*args, **kwargs)
+            CACHE[url] = {"content": content,
+                          "timestamp": time.time(), "count": 1}
+            return content
+    return wrapped
 
 
-@cache_result
+@cache
 def get_page(url: str) -> str:
-    """
-    fetch and returns the content of a url
+    """_summary_
 
     Args:
-        url (str): url to get
+        url (str): _description_
 
-    Return:
-        content of the url
+    Returns:
+        str: _description_
     """
+    global count
+    # increment count
+    count += 1
     response = requests.get(url)
-    return response.text
+    return response.content.decode('utf-8')
